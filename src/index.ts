@@ -7,8 +7,63 @@ import chalk from 'chalk';
 import boxen from 'boxen';
 
 async function main() {
-    // Load configuration and initialize agent
-    const config = await loadConfig();
+    // Parse command-line arguments
+    const args = process.argv.slice(2);
+    let configPath: string | undefined;
+
+    // Check for --agent_config argument
+    for (let i = 0; i < args.length; i++) {
+        if (args[i].startsWith('--agent_config=')) {
+            configPath = args[i].split('=')[1];
+        } else if (args[i] === '--agent_config' && i + 1 < args.length) {
+            configPath = args[i + 1];
+        }
+    }
+
+    // Try to load configuration
+    let config;
+    try {
+        config = await loadConfig(configPath);
+    } catch (error) {
+        // If config loading fails, prompt user for config path
+        console.log(chalk.yellow('⚠️  Could not load agent configuration.'));
+        console.log(chalk.gray((error as Error).message));
+        console.log('');
+
+        const rl = readline.createInterface({
+            input,
+            output
+        });
+
+        const askConfigPath = (): Promise<string> => {
+            return new Promise((resolve) => {
+                rl.question(chalk.cyan('Enter the path to your agent_config.json file: '), (answer) => {
+                    resolve(answer.trim());
+                });
+            });
+        };
+
+        while (!config) {
+            const userProvidedPath = await askConfigPath();
+
+            if (!userProvidedPath) {
+                console.log(chalk.red('No path provided. Exiting...'));
+                rl.close();
+                process.exit(1);
+            }
+
+            try {
+                config = await loadConfig(userProvidedPath);
+                console.log(chalk.green('✓ Configuration loaded successfully!\n'));
+            } catch (err) {
+                console.log(chalk.red('✗ Failed to load config: ' + (err as Error).message));
+                console.log(chalk.yellow('Please try again.\n'));
+            }
+        }
+
+        rl.close();
+    }
+
     const agent = await getAgent();
 
     const rl = readline.createInterface({
@@ -24,7 +79,7 @@ async function main() {
 
     // Display welcome banner with config-based information
     console.log(boxen(
-        chalk.dim(config.description || 'Fully configurable AI Agent in your terminal powered by VoltAgent'),
+        chalk.dim('Fully configurable AI Agent in your terminal powered by VoltAgent'),
         {
             padding: 1,
             margin: 1,

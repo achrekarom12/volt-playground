@@ -99,7 +99,9 @@ The agent's behavior is controlled through the `agent_config.json` file in the r
 
 ### Running the Application
 
-Start the interactive chat interface:
+#### Default Usage
+
+Start the interactive chat interface with the default `agent_config.json` in the root directory:
 
 ```bash
 pnpm start
@@ -107,11 +109,46 @@ pnpm start
 pnpm dev
 ```
 
-The agent will load your configuration from `agent_config.json` and start an interactive terminal session.
+#### Custom Config Path
+
+You can specify a custom path to your `agent_config.json` file using the `--agent_config` flag:
+
+```bash
+# Using --agent_config= syntax
+pnpm start --agent_config=/path/to/your/agent_config.json
+
+# Using --agent_config with space
+pnpm start --agent_config /path/to/your/agent_config.json
+```
+
+**Examples**:
+```bash
+# Load config from a different directory
+pnpm start --agent_config=./configs/my-agent.json
+
+# Load config from an absolute path
+pnpm start --agent_config=/Users/username/Documents/agent_config.json
+```
+
+#### Interactive Config Path Prompt
+
+If the default `agent_config.json` is not found and no `--agent_config` argument is provided, the application will prompt you to enter the path interactively:
+
+```
+⚠️  Could not load agent configuration.
+Failed to load agent config from "agent_config.json": ENOENT: no such file or directory
+
+Enter the path to your agent_config.json file: 
+```
+
+Simply type or paste the path to your configuration file and press Enter. The application will validate the config and prompt again if the path is invalid.
+
+The agent will load your configuration and start an interactive terminal session.
 
 ## Features
 
 - 🔧 **Fully Configurable**: Customize agent behavior via `agent_config.json`
+- 📁 **Flexible Config Path**: Specify custom config locations via CLI arguments or interactive prompts
 - 🤖 **Multi-Provider Support**: Switch between Gemini and OpenAI models
 - 💬 **Interactive Chat**: Terminal-based conversational interface
 - ⚡ **Fast & Lightweight**: Built on VoltAgent framework

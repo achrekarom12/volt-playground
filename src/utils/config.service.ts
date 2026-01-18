@@ -3,9 +3,9 @@ import { join } from 'path';
 import { AgentConfig } from './types';
 
 
-export async function loadConfig(): Promise<AgentConfig> {
+export async function loadConfig(customConfigPath?: string): Promise<AgentConfig> {
     try {
-        const configPath = join(process.cwd(), 'agent_config.json');
+        const configPath = customConfigPath || join(process.cwd(), 'agent_config.json');
         const configData = await readFile(configPath, 'utf-8');
         const config: AgentConfig = JSON.parse(configData);
 
@@ -15,6 +15,6 @@ export async function loadConfig(): Promise<AgentConfig> {
 
         return config;
     } catch (error) {
-        throw new Error(`Failed to load agent config: ${(error as Error).message}`);
+        throw new Error(`Failed to load agent config from "${customConfigPath || join(process.cwd(), 'agent_config.json')}": ${(error as Error).message}`);
     }
 }

@@ -7,6 +7,6 @@ export interface AgentConfig {
     name: string;
     provider: Providers;
     model: string;
-    description: string;
+    role: string;
     persona: string;
 }

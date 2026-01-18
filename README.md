@@ -48,7 +48,7 @@ The agent's behavior is controlled through the `agent_config.json` file in the r
   "name": "VoltAgent",
   "provider": "gemini",
   "model": "gemini-2.5-flash-lite",
-  "description": "A fully configurable AI Agent in your terminal powered by VoltAgent",
+  "role": "Technical Writer",
   "persona": "Helpful, empathetic"
 }
 ```
@@ -58,7 +58,7 @@ The agent's behavior is controlled through the `agent_config.json` file in the r
 | `name` | string | The name of your AI agent | Yes |
 | `provider` | string | AI provider: `"gemini"` or `"openai"` | Yes |
 | `model` | string | The specific model to use | Yes |
-| `description` | string | A brief description of your agent's purpose | Yes |
+| `role` | string | The role of your agent | Yes |
 | `persona` | string | The personality traits of your agent | Yes |
 
 
@@ -70,7 +70,7 @@ The agent's behavior is controlled through the `agent_config.json` file in the r
   "name": "CodeMaster",
   "provider": "gemini",
   "model": "gemini-2.5-flash-lite",
-  "description": "A technical assistant specialized in code review and debugging",
+  "role": "Technical Assistant",
   "persona": "Professional, detail-oriented, and thorough"
 }
 ```
@@ -81,7 +81,7 @@ The agent's behavior is controlled through the `agent_config.json` file in the r
   "name": "StoryWeaver",
   "provider": "openai",
   "model": "gpt-4o",
-  "description": "A creative writing assistant for storytelling and content creation",
+  "role": "Creative Writing Assistant",
   "persona": "Creative, imaginative, and inspiring"
 }
 ```
@@ -92,7 +92,7 @@ The agent's behavior is controlled through the `agent_config.json` file in the r
   "name": "ResearchBot",
   "provider": "gemini",
   "model": "gemini-1.5-pro",
-  "description": "An AI assistant for research and analysis",
+  "role": "Research Assistant",
   "persona": "Analytical, thorough, and objective"
 }
 ```

@@ -1,4 +1,5 @@
-import { agent } from './services/ai.service';
+import { getAgent } from './services/ai.service';
+import { loadConfig } from './utils/config.service';
 import * as readline from 'node:readline';
 import { stdin as input, stdout as output } from 'node:process';
 import { generateChatId, generateUserId } from './utils/uuid';
@@ -6,6 +7,10 @@ import chalk from 'chalk';
 import boxen from 'boxen';
 
 async function main() {
+    // Load configuration and initialize agent
+    const config = await loadConfig();
+    const agent = await getAgent();
+
     const rl = readline.createInterface({
         input,
         output,
@@ -17,18 +22,21 @@ async function main() {
 
     process.stdout.write('\x1Bc');
 
+    // Display welcome banner with config-based information
     console.log(boxen(
-        chalk.dim('Fully configurable AI Agent in your terminal powered by VoltAgent'),
+        chalk.dim(config.description || 'Fully configurable AI Agent in your terminal powered by VoltAgent'),
         {
             padding: 1,
             margin: 1,
             borderStyle: 'double',
             borderColor: 'cyan',
-            title: '⚡ Volt Playground Agent ⚡',
+            title: `⚡ ${config.name} ⚡`,
             titleAlignment: 'center'
         }
     ));
 
+    console.log(chalk.gray(`Provider: ${config.provider}`));
+    console.log(chalk.gray(`Model: ${config.model}`));
     console.log(chalk.gray(`Session: ${threadId}`));
     console.log(chalk.gray(`User: ${userId}`))
     console.log("\n")

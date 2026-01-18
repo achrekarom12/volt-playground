@@ -1,10 +1,10 @@
 import { BaseRetriever } from "@voltagent/core";
 import { GoogleGenAI } from "@google/genai";
-import { GOOGLE_API_KEY } from "../utils/env";
+import { GEMINI_API_KEY } from "../utils/env";
 import { client } from "./vector.service";
 
 const ai = new GoogleGenAI({
-  apiKey: GOOGLE_API_KEY,
+  apiKey: GEMINI_API_KEY,
 });
 
 export class HistoryRetriever extends BaseRetriever {

@@ -1,31 +1,51 @@
-import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
+import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { GOOGLE_API_KEY } from "../utils/env";
-import { HistoryRetriever } from "./retriever.service";
+import { loadConfig } from "../utils/config.service";
+import { getProvider } from "./provider.service";
 
-const PERSONA_BASE_SYSTEM_PROMPT = `
-You are a helpful assistant who behaves like a real person and has a persona.
-You are a very friendly and empathetic. 
-Keep your responses short and concise.
-`;
+async function buildSystemPrompt(): Promise<string> {
+    const config = await loadConfig();
 
-export const client = createGoogleGenerativeAI({
-    apiKey: GOOGLE_API_KEY,
-});
+    let prompt = '';
 
-export const agent = new Agent({
-    name: "Persona-based Agent",
-    instructions: PERSONA_BASE_SYSTEM_PROMPT,
-    model: client("gemini-2.5-flash-lite"),
-    memory: new Memory({
-        storage: new LibSQLMemoryAdapter({
-            url: "file:./.voltagent/memory.db",
+    if (config.description) {
+        prompt += `${config.description}\n\n`;
+    }
+
+    if (config.persona) {
+        prompt += `Persona: ${config.persona}\n`;
+        prompt += `You should embody this persona in all your interactions.\n`;
+    }
+
+    prompt += `\nKeep your responses short and concise.`;
+
+    return prompt;
+}
+
+async function initializeAgent(): Promise<Agent> {
+    const config = await loadConfig();
+    const systemPrompt = await buildSystemPrompt();
+    const client = await getProvider(config.provider);
+
+    return new Agent({
+        name: config.name,
+        instructions: systemPrompt,
+        model: client(config.model),
+        memory: new Memory({
+            storage: new LibSQLMemoryAdapter({
+                url: "file:./.voltagent/memory.db",
+            }),
+            workingMemory: {
+                enabled: true,
+                scope: "user",
+            },
         }),
-        workingMemory: {
-            enabled: true,
-            scope: "user",
-        },
-    }),
-    // retriever: new HistoryRetriever(),
-});
+        // retriever: new HistoryRetriever(),
+    });
+}
+
+export const agentPromise = initializeAgent();
+
+export async function getAgent(): Promise<Agent> {
+    return agentPromise;
+}

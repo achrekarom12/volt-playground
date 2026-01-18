@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { GOOGLE_API_KEY } from "../utils/env";
+import { GEMINI_API_KEY } from "../utils/env";
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -7,7 +7,7 @@ import { getOrCreateCollection, addData, getCollectionDetails } from "./vector.s
 
 
 const ai = new GoogleGenAI({
-    apiKey: GOOGLE_API_KEY,
+    apiKey: GEMINI_API_KEY,
 });
 
 

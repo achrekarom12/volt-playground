@@ -74,3 +74,6 @@ Thumbs.db
 
 # Voltagent memory
 .voltagent
+
+# Agent config
+agent_config.json

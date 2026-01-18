@@ -24,7 +24,7 @@
 3. **Configure environment variables**:
    Create a `.env` file in the root directory:
    ```env
-   GOOGLE_API_KEY=your_google_api_key_here
+   GEMINI_API_KEY=your_GEMINI_API_KEY_here
    ```
 
 ### Running the Application

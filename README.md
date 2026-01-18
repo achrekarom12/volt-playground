@@ -145,13 +145,84 @@ Simply type or paste the path to your configuration file and press Enter. The ap
 
 The agent will load your configuration and start an interactive terminal session.
 
+#### Using Interactive Commands
+
+Once the application is running, type `/help` to see all available commands for managing your chat sessions, viewing history, and more. See the [Interactive Commands](#interactive-commands) section below for details.
+
 ## Features
 
 - 🔧 **Fully Configurable**: Customize agent behavior via `agent_config.json`
 - 📁 **Flexible Config Path**: Specify custom config locations via CLI arguments or interactive prompts
 - 🤖 **Multi-Provider Support**: Switch between Gemini and OpenAI models
-- 💬 **Interactive Chat**: Terminal-based conversational interface
+- 💬 **Interactive Chat**: Terminal-based conversational interface with rich commands
+- 📜 **Chat History**: Persistent conversation history with ability to load and continue past chats
+- 💾 **Local Storage**: All conversations stored locally in SQLite database
 - ⚡ **Fast & Lightweight**: Built on VoltAgent framework
+
+## Interactive Commands
+
+Once the application is running, you can use the following commands:
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Display all available commands |
+| `/new` | Start a new chat session |
+| `/history` | List all your past conversations |
+| `/load <chat_id>` | Load and continue a specific conversation |
+| `/view` | View the current chat history |
+| `/bye` | Exit the application |
+
+### Chat History Usage
+
+**View your past conversations:**
+```
+You: /history
+
+💬 Your Chat History:
+────────────────────────────────────────────────────────────────────────────────
+1. How do I implement authentication in Node.js? (12 messages)
+   ID: chat_abc123...
+   Last updated: 1/18/2026, 2:30:45 PM
+
+2. Explain React hooks (8 messages)
+   ID: chat_def456...
+   Last updated: 1/17/2026, 4:15:22 PM
+────────────────────────────────────────────────────────────────────────────────
+💡 Use /load <chat_id> to continue a conversation
+```
+
+**Load a previous conversation:**
+```
+You: /load chat_abc123...
+
+✓ Loaded chat: How do I implement authentication in Node.js?
+Messages: 12
+
+📜 Chat History:
+────────────────────────────────────────────────────────────────────────────────
+[2:25:30 PM] You: How do I implement authentication in Node.js?
+[2:25:35 PM] Agent: I'll help you implement authentication...
+...
+────────────────────────────────────────────────────────────────────────────────
+```
+
+**Start a new conversation:**
+```
+You: /new
+
+✨ Started new chat session: chat_xyz789...
+```
+
+## Data Storage
+
+All chat data is stored locally in `.voltagent/memory.db` using LibSQL (SQLite):
+
+- **Conversations**: Stored in `voltagent_memory_conversations` table
+  - Includes conversation ID, title, timestamps, and metadata
+- **Messages**: Stored in `voltagent_memory_messages` table
+  - Includes message content, role (user/assistant), and timestamps
+- **Automatic Persistence**: All messages are automatically saved as you chat
+- **Privacy**: Everything is stored locally on your machine
 
 ## Acknowledgments
 

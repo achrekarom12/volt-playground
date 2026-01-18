@@ -2,9 +2,10 @@ import { getAgent } from './services/ai.service';
 import { loadConfig } from './utils/config.service';
 import * as readline from 'node:readline';
 import { stdin as input, stdout as output } from 'node:process';
-import { generateChatId, generateUserId } from './utils/uuid';
+import { generateChatId, getUserName } from './utils/uuid';
 import chalk from 'chalk';
 import boxen from 'boxen';
+import { ChatHistoryService } from './services/chat-history.service';
 
 async function main() {
     // Parse command-line arguments
@@ -65,6 +66,8 @@ async function main() {
     }
 
     const agent = await getAgent();
+    const chatHistoryService = new ChatHistoryService();
+    await chatHistoryService.initialize();
 
     const rl = readline.createInterface({
         input,
@@ -72,8 +75,8 @@ async function main() {
         prompt: chalk.bold.blue('You: ')
     });
 
-    const threadId = generateChatId();
-    const userId = generateUserId();
+    let threadId = generateChatId();
+    const userId = getUserName();
 
     process.stdout.write('\x1Bc');
 
@@ -95,7 +98,8 @@ async function main() {
     console.log(chalk.gray(`Session: ${threadId}`));
     console.log(chalk.gray(`User: ${userId}`))
     console.log("\n")
-    console.log(chalk.yellow("Type 'exit' or 'bye' to quit.\n"));
+    console.log(chalk.yellow("Type '/bye' to quit."));
+    console.log(chalk.cyan("Type '/help' for available commands.\n"));
 
     const askQuestion = () => {
         return new Promise<string>((resolve) => {
@@ -105,16 +109,149 @@ async function main() {
         });
     };
 
+    const displayHelp = () => {
+        console.log(chalk.bold.cyan('\n📚 Available Commands:'));
+        console.log(chalk.gray('─'.repeat(50)));
+        console.log(chalk.white('  /help') + chalk.gray('          - Show this help message'));
+        console.log(chalk.white('  /new') + chalk.gray('           - Start a new chat session'));
+        console.log(chalk.white('  /history') + chalk.gray('       - List all your past chats'));
+        console.log(chalk.white('  /load <chat_id>') + chalk.gray(' - Load a specific chat by ID'));
+        console.log(chalk.white('  /view') + chalk.gray('          - View current chat history'));
+        console.log(chalk.white('  /bye') + chalk.gray(' - Exit the application'));
+        console.log(chalk.gray('─'.repeat(50)) + '\n');
+    };
+
+    const displayChatHistory = async () => {
+        const chats = await chatHistoryService.listConversations(userId);
+
+        if (chats.length === 0) {
+            console.log(chalk.yellow('\n📭 No chat history found.\n'));
+            return;
+        }
+
+        console.log(chalk.bold.cyan('\n💬 Your Chat History:'));
+        console.log(chalk.gray('─'.repeat(80)));
+
+        chats.forEach((chat, index) => {
+            const date = new Date(chat.updated_at).toLocaleString();
+            console.log(
+                chalk.white(`${index + 1}. `) +
+                chalk.bold.green(chat.title) +
+                chalk.gray(` (${chat.messageCount} messages)`)
+            );
+            console.log(chalk.gray(`   ID: ${chat.id}`));
+            console.log(chalk.gray(`   Last updated: ${date}\n`));
+        });
+
+        console.log(chalk.gray('─'.repeat(80)));
+        console.log(chalk.cyan('💡 Use /load <chat_id> to continue a conversation\n'));
+    };
+
+    const loadChatHistory = async (chatId: string) => {
+        const { conversation, messages } = await chatHistoryService.getConversation(chatId, userId);
+
+        if (!conversation) {
+            console.log(chalk.red(`\n❌ Chat not found: ${chatId}\n`));
+            return;
+        }
+
+        threadId = chatId;
+        console.log(chalk.green(`\n✓ Loaded chat: ${conversation.title}`));
+        console.log(chalk.gray(`Messages: ${messages.length}\n`));
+
+        // Display the chat history
+        if (messages.length > 0) {
+            console.log(chalk.bold.cyan('📜 Chat History:'));
+            console.log(chalk.gray('─'.repeat(80)));
+
+            messages.forEach((msg) => {
+                const timestamp = new Date(msg.created_at).toLocaleTimeString();
+                const content = chatHistoryService.parseMessageContent(msg.parts);
+                if (msg.role === 'user') {
+                    console.log(chalk.bold.blue(`[${timestamp}] You: `) + chalk.white(content));
+                } else {
+                    console.log(chalk.bold.magenta(`[${timestamp}] Agent: `) + chalk.white(content));
+                }
+                console.log('');
+            });
+
+            console.log(chalk.gray('─'.repeat(80)) + '\n');
+        }
+    };
+
+    const viewCurrentChat = async () => {
+        const { conversation, messages } = await chatHistoryService.getConversation(threadId, userId);
+
+        if (!conversation || messages.length === 0) {
+            console.log(chalk.yellow('\n📭 No messages in current chat yet.\n'));
+            return;
+        }
+
+        console.log(chalk.bold.cyan(`\n💬 Current Chat: ${conversation.title}`));
+        console.log(chalk.gray('─'.repeat(80)));
+
+        messages.forEach((msg) => {
+            const timestamp = new Date(msg.created_at).toLocaleTimeString();
+            const content = chatHistoryService.parseMessageContent(msg.parts);
+            if (msg.role === 'user') {
+                console.log(chalk.bold.blue(`[${timestamp}] You: `) + chalk.white(content));
+            } else {
+                console.log(chalk.bold.magenta(`[${timestamp}] Agent: `) + chalk.white(content));
+            }
+            console.log('');
+        });
+
+        console.log(chalk.gray('─'.repeat(80)) + '\n');
+    };
+
     while (true) {
         const userInputRaw = await askQuestion();
         const userInput = userInputRaw.trim();
 
         if (!userInput) continue;
 
-        if (['exit', 'bye', 'quit', 'q'].includes(userInput.toLowerCase())) {
+        // Handle exit commands
+        if (['/bye'].includes(userInput.toLowerCase())) {
             console.log(chalk.green('\n👋 See you later! Have a great day!\n'));
             rl.close();
             process.exit(0);
+        }
+
+        // Handle special commands
+        if (userInput.startsWith('/')) {
+            const [command, ...args] = userInput.split(' ');
+
+            switch (command.toLowerCase()) {
+                case '/help':
+                    displayHelp();
+                    continue;
+
+                case '/new':
+                    threadId = generateChatId();
+                    console.log(chalk.green(`\n✨ Started new chat session: ${threadId}\n`));
+                    continue;
+
+                case '/history':
+                    await displayChatHistory();
+                    continue;
+
+                case '/load':
+                    if (args.length === 0) {
+                        console.log(chalk.red('\n❌ Please provide a chat ID. Usage: /load <chat_id>\n'));
+                    } else {
+                        await loadChatHistory(args[0]);
+                    }
+                    continue;
+
+                case '/view':
+                    await viewCurrentChat();
+                    continue;
+
+                default:
+                    console.log(chalk.red(`\n❌ Unknown command: ${command}`));
+                    console.log(chalk.gray('Type /help for available commands.\n'));
+                    continue;
+            }
         }
 
         try {

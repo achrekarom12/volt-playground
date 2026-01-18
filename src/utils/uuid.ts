@@ -1,3 +1,5 @@
+import * as os from 'os';
+
 function generateUUID(): string {
     return crypto.randomUUID();
 }
@@ -7,4 +9,8 @@ export function generatePrefixedUUID(prefix: string): string {
 }
 
 export const generateChatId = () => generatePrefixedUUID("chat_");
-export const generateUserId = () => generatePrefixedUUID("user_");
+
+// Generate a constant user ID based on system username
+export const getUserName = () => {
+    return os.userInfo().username;
+};

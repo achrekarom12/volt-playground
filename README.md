@@ -1,6 +1,6 @@
 # Volt Playground
 
-A fully configurable AI Agent powered by VoltAgent that runs in your terminal.
+A fully configurable **Multi-Agent AI System** powered by VoltAgent that runs in your terminal. Chat with multiple AI agents, each with unique capabilities, personas, and expertise.
 
 ## Getting Started
 
@@ -37,63 +37,170 @@ A fully configurable AI Agent powered by VoltAgent that runs in your terminal.
 
 ## Configuration
 
-### Agent Configuration (`agent_config.json`)
+### Multi-Agent Configuration (`agent_config.json`)
 
-The agent's behavior is controlled through the `agent_config.json` file in the root directory. This allows you to customize your AI agent without modifying any code.
+The system supports **multiple AI agents** with different capabilities and personas. Configure all your agents in the `agent_config.json` file in the root directory. You can switch between agents during your chat session without restarting the application.
 
-#### Configuration Options
+#### Configuration Structure
 
 ```json
 {
-  "name": "VoltAgent",
-  "provider": "gemini",
-  "model": "gemini-2.5-flash-lite",
-  "role": "Technical Writer",
-  "persona": "Helpful, empathetic"
+  "defaultAgent": "technical-writer",
+  "agents": [
+    {
+      "id": "technical-writer",
+      "name": "VoltAgent",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "role": "Technical Writer",
+      "persona": "Helpful, empathetic",
+      "description": "Expert in creating clear, concise technical documentation"
+    },
+    {
+      "id": "code-reviewer",
+      "name": "CodeGuardian",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "role": "Senior Code Reviewer",
+      "persona": "Detail-oriented, constructive, thorough",
+      "description": "Specialized in code quality, best practices, and security reviews"
+    }
+  ]
 }
 ```
+
+#### Configuration Fields
+
+**Root Level:**
 
 | Field | Type | Description | Required |
 |-------|------|-------------|----------|
-| `name` | string | The name of your AI agent | Yes |
+| `defaultAgent` | string | The ID of the agent to use by default when starting for first time | Yes |
+| `agents` | array | Array of agent configurations (must contain at least one agent) | Yes |
+
+**Agent Configuration:**
+
+| Field | Type | Description | Required |
+|-------|------|-------------|----------|
+| `id` | string | Unique identifier for the agent (used for switching between agents) | Yes |
+| `name` | string | Display name of the AI agent | Yes |
 | `provider` | string | AI provider: `"gemini"` or `"openai"` | Yes |
 | `model` | string | The specific model to use | Yes |
-| `role` | string | The role of your agent | Yes |
-| `persona` | string | The personality traits of your agent | Yes |
+| `role` | string | The professional role of the agent | Yes |
+| `persona` | string | Personality traits and communication style | Yes |
+| `description` | string | Brief description of the agent's expertise and capabilities | Yes |
 
 
-#### Example Configurations
+#### Example Multi-Agent Configurations
 
-**Technical Assistant**:
+**Development Team Setup** (Code Review, Documentation, and Architecture):
+
 ```json
 {
-  "name": "CodeMaster",
-  "provider": "gemini",
-  "model": "gemini-2.5-flash-lite",
-  "role": "Technical Assistant",
-  "persona": "Professional, detail-oriented, and thorough"
+  "defaultAgent": "code-reviewer",
+  "agents": [
+    {
+      "id": "code-reviewer",
+      "name": "CodeGuardian",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "role": "Senior Code Reviewer",
+      "persona": "Detail-oriented, constructive, thorough",
+      "description": "Specialized in code quality, best practices, and security reviews"
+    },
+    {
+      "id": "tech-writer",
+      "name": "DocBot",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "role": "Technical Writer",
+      "persona": "Clear, concise, user-focused",
+      "description": "Expert in creating API docs, README files, and user guides"
+    },
+    {
+      "id": "architect",
+      "name": "SystemDesigner",
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "role": "Software Architect",
+      "persona": "Strategic, analytical, forward-thinking",
+      "description": "Designs scalable systems and evaluates architectural decisions"
+    }
+  ]
 }
 ```
 
-**Creative Writer**:
+**Content Creation Team** (Writing, Editing, and Research):
+
 ```json
 {
-  "name": "StoryWeaver",
-  "provider": "openai",
-  "model": "gpt-4o",
-  "role": "Creative Writing Assistant",
-  "persona": "Creative, imaginative, and inspiring"
+  "defaultAgent": "creative-writer",
+  "agents": [
+    {
+      "id": "creative-writer",
+      "name": "StoryWeaver",
+      "provider": "openai",
+      "model": "gpt-4o",
+      "role": "Creative Writer",
+      "persona": "Imaginative, expressive, engaging",
+      "description": "Crafts compelling narratives, blog posts, and creative content"
+    },
+    {
+      "id": "editor",
+      "name": "EditPro",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "role": "Content Editor",
+      "persona": "Meticulous, constructive, grammar-focused",
+      "description": "Polishes content for clarity, grammar, and style"
+    },
+    {
+      "id": "researcher",
+      "name": "ResearchBot",
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "role": "Research Assistant",
+      "persona": "Analytical, thorough, objective",
+      "description": "Gathers information, fact-checks, and provides citations"
+    }
+  ]
 }
 ```
 
-**Research Assistant**:
+**Learning Assistant Setup** (Tutor, Quiz Master, and Study Guide):
+
 ```json
 {
-  "name": "ResearchBot",
-  "provider": "gemini",
-  "model": "gemini-1.5-pro",
-  "role": "Research Assistant",
-  "persona": "Analytical, thorough, and objective"
+  "defaultAgent": "tutor",
+  "agents": [
+    {
+      "id": "tutor",
+      "name": "TeachBot",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "role": "Personal Tutor",
+      "persona": "Patient, encouraging, adaptive",
+      "description": "Explains concepts clearly with examples and analogies"
+    },
+    {
+      "id": "quiz-master",
+      "name": "QuizBot",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "role": "Quiz Master",
+      "persona": "Challenging, fair, motivating",
+      "description": "Creates practice questions and provides detailed feedback"
+    },
+    {
+      "id": "study-guide",
+      "name": "StudyPal",
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "role": "Study Guide Creator",
+      "persona": "Organized, comprehensive, structured",
+      "description": "Summarizes topics and creates study materials"
+    }
+  ]
 }
 ```
 
@@ -151,11 +258,15 @@ Once the application is running, type `/help` to see all available commands for 
 
 ## Features
 
+- 🤖 **Multi-Agent System**: Configure and switch between multiple AI agents with different expertise
 - 🔧 **Fully Configurable**: Customize agent behavior via `agent_config.json`
-- 📁 **Flexible Config Path**: Specify custom config locations via CLI arguments or interactive prompts
-- 🤖 **Multi-Provider Support**: Switch between Gemini and OpenAI models
+- � **Dynamic Agent Switching**: Switch between agents during chat without restarting
+- �📁 **Flexible Config Path**: Specify custom config locations via CLI arguments or interactive prompts
+- 🎭 **Unique Personas**: Each agent has its own role, personality, and communication style
+- 🧠 **Persistent Memory**: Each agent maintains its own conversation context
 - 💬 **Interactive Chat**: Terminal-based conversational interface with rich commands
 - 📜 **Chat History**: Persistent conversation history with ability to load and continue past chats
+- 🔌 **Multi-Provider Support**: Switch between Gemini and OpenAI models
 - 💾 **Local Storage**: All conversations stored locally in SQLite database
 - ⚡ **Fast & Lightweight**: Built on VoltAgent framework
 
@@ -170,7 +281,60 @@ Once the application is running, you can use the following commands:
 | `/history` | List all your past conversations |
 | `/load <chat_id>` | Load and continue a specific conversation |
 | `/view` | View the current chat history |
+| `/agents` | List all available agents with their details |
+| `/switch <agent_id>` | Switch to a different agent |
+| `/current` | Show information about the current active agent |
 | `/bye` | Exit the application |
+
+### Multi-Agent Commands
+
+**List all available agents:**
+```
+You: /agents
+
+🤖 Available Agents:
+────────────────────────────────────────────────────────────────────────────────
+● 1. VoltAgent (technical-writer)
+   Role: Technical Writer
+   Persona: Helpful, empathetic
+   Description: Expert in creating clear, concise technical documentation
+   Provider: gemini | Model: gemini-2.5-flash-lite
+
+○ 2. CodeGuardian (code-reviewer)
+   Role: Senior Code Reviewer
+   Persona: Detail-oriented, constructive, thorough
+   Description: Specialized in code quality, best practices, and security reviews
+   Provider: gemini | Model: gemini-2.5-flash-lite
+
+────────────────────────────────────────────────────────────────────────────────
+💡 Use /switch <agent_id> to change agents
+```
+
+**Switch to a different agent:**
+```
+You: /switch code-reviewer
+
+✓ Switched to agent: CodeGuardian
+Role: Senior Code Reviewer
+Persona: Detail-oriented, constructive, thorough
+Description: Specialized in code quality, best practices, and security reviews
+```
+
+**View current agent:**
+```
+You: /current
+
+🤖 Current Agent:
+────────────────────────────────────────────────────────────
+  Name: CodeGuardian
+  ID: code-reviewer
+  Role: Senior Code Reviewer
+  Persona: Detail-oriented, constructive, thorough
+  Description: Specialized in code quality, best practices, and security reviews
+  Provider: gemini
+  Model: gemini-2.5-flash-lite
+────────────────────────────────────────────────────────────
+```
 
 ### Chat History Usage
 

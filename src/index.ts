@@ -1,5 +1,5 @@
-import { getAgent } from './services/ai.service';
-import { loadConfig } from './utils/config.service';
+import { MultiAgentService } from './services/multi-agent.service';
+import { loadMultiAgentConfig } from './utils/config.service';
 import * as readline from 'node:readline';
 import { stdin as input, stdout as output } from 'node:process';
 import { generateChatId, getUserName } from './utils/uuid';
@@ -22,9 +22,9 @@ async function main() {
     }
 
     // Try to load configuration
-    let config;
+    let multiAgentConfig;
     try {
-        config = await loadConfig(configPath);
+        multiAgentConfig = await loadMultiAgentConfig(configPath);
     } catch (error) {
         // If config loading fails, prompt user for config path
         console.log(chalk.yellow('⚠️  Could not load agent configuration.'));
@@ -44,7 +44,7 @@ async function main() {
             });
         };
 
-        while (!config) {
+        while (!multiAgentConfig) {
             const userProvidedPath = await askConfigPath();
 
             if (!userProvidedPath) {
@@ -54,7 +54,8 @@ async function main() {
             }
 
             try {
-                config = await loadConfig(userProvidedPath);
+                multiAgentConfig = await loadMultiAgentConfig(userProvidedPath);
+                configPath = userProvidedPath;
                 console.log(chalk.green('✓ Configuration loaded successfully!\n'));
             } catch (err) {
                 console.log(chalk.red('✗ Failed to load config: ' + (err as Error).message));
@@ -65,9 +66,13 @@ async function main() {
         rl.close();
     }
 
-    const agent = await getAgent();
+    const multiAgentService = new MultiAgentService(configPath);
+    await multiAgentService.initialize();
+
     const chatHistoryService = new ChatHistoryService();
     await chatHistoryService.initialize();
+
+    let currentAgentConfig = await multiAgentService.getCurrentAgentConfig();
 
     const rl = readline.createInterface({
         input,
@@ -82,19 +87,20 @@ async function main() {
 
     // Display welcome banner with config-based information
     console.log(boxen(
-        chalk.dim('Fully configurable AI Agent in your terminal powered by VoltAgent'),
+        chalk.dim('Fully configurable Multi-Agent AI in your terminal powered by VoltAgent'),
         {
             padding: 1,
             margin: 1,
             borderStyle: 'double',
             borderColor: 'cyan',
-            title: `⚡ ${config.name} ⚡`,
+            title: `⚡ ${currentAgentConfig.name} ⚡`,
             titleAlignment: 'center'
         }
     ));
 
-    console.log(chalk.gray(`Provider: ${config.provider}`));
-    console.log(chalk.gray(`Model: ${config.model}`));
+    console.log(chalk.gray(`Current Agent: ${currentAgentConfig.name} (${currentAgentConfig.id})`));
+    console.log(chalk.gray(`Role: ${currentAgentConfig.role}`));
+    console.log(chalk.gray(`Provider: ${currentAgentConfig.provider} | Model: ${currentAgentConfig.model}`));
     console.log(chalk.gray(`Session: ${threadId}`));
     console.log(chalk.gray(`User: ${userId}`))
     console.log("\n")
@@ -111,14 +117,17 @@ async function main() {
 
     const displayHelp = () => {
         console.log(chalk.bold.cyan('\n📚 Available Commands:'));
-        console.log(chalk.gray('─'.repeat(50)));
-        console.log(chalk.white('  /help') + chalk.gray('          - Show this help message'));
-        console.log(chalk.white('  /new') + chalk.gray('           - Start a new chat session'));
-        console.log(chalk.white('  /history') + chalk.gray('       - List all your past chats'));
-        console.log(chalk.white('  /load <chat_id>') + chalk.gray(' - Load a specific chat by ID'));
-        console.log(chalk.white('  /view') + chalk.gray('          - View current chat history'));
-        console.log(chalk.white('  /bye') + chalk.gray(' - Exit the application'));
-        console.log(chalk.gray('─'.repeat(50)) + '\n');
+        console.log(chalk.gray('─'.repeat(60)));
+        console.log(chalk.white('  /help') + chalk.gray('             - Show this help message'));
+        console.log(chalk.white('  /new') + chalk.gray('              - Start a new chat session'));
+        console.log(chalk.white('  /history') + chalk.gray('          - List all your past chats'));
+        console.log(chalk.white('  /load <chat_id>') + chalk.gray('  - Load a specific chat by ID'));
+        console.log(chalk.white('  /view') + chalk.gray('             - View current chat history'));
+        console.log(chalk.white('  /agents') + chalk.gray('           - List all available agents'));
+        console.log(chalk.white('  /switch <agent_id>') + chalk.gray(' - Switch to a different agent'));
+        console.log(chalk.white('  /current') + chalk.gray('          - Show current agent info'));
+        console.log(chalk.white('  /bye') + chalk.gray('              - Exit the application'));
+        console.log(chalk.gray('─'.repeat(60)) + '\n');
     };
 
     const displayChatHistory = async () => {
@@ -204,6 +213,61 @@ async function main() {
         console.log(chalk.gray('─'.repeat(80)) + '\n');
     };
 
+    const displayAgents = async () => {
+        const agents = await multiAgentService.listAvailableAgents();
+        const currentId = multiAgentService.getCurrentAgentId();
+
+        console.log(chalk.bold.cyan('\n🤖 Available Agents:'));
+        console.log(chalk.gray('─'.repeat(80)));
+
+        agents.forEach((agent, index) => {
+            const isCurrent = agent.id === currentId;
+            const marker = isCurrent ? chalk.green('●') : chalk.gray('○');
+
+            console.log(
+                `${marker} ${chalk.white(`${index + 1}. `)}` +
+                chalk.bold.cyan(agent.name) +
+                chalk.gray(` (${agent.id})`)
+            );
+            console.log(chalk.gray(`   Role: ${agent.role}`));
+            console.log(chalk.gray(`   Persona: ${agent.persona}`));
+            console.log(chalk.gray(`   Description: ${agent.description}`));
+            console.log(chalk.gray(`   Provider: ${agent.provider} | Model: ${agent.model}\n`));
+        });
+
+        console.log(chalk.gray('─'.repeat(80)));
+        console.log(chalk.cyan('💡 Use /switch <agent_id> to change agents\n'));
+    };
+
+    const switchAgent = async (agentId: string) => {
+        try {
+            const newConfig = await multiAgentService.switchAgent(agentId);
+            currentAgentConfig = newConfig;
+
+            console.log(chalk.green(`\n✓ Switched to agent: ${newConfig.name}`));
+            console.log(chalk.gray(`Role: ${newConfig.role}`));
+            console.log(chalk.gray(`Persona: ${newConfig.persona}`));
+            console.log(chalk.gray(`Description: ${newConfig.description}\n`));
+        } catch (error) {
+            console.log(chalk.red(`\n❌ Failed to switch agent: ${(error as Error).message}\n`));
+        }
+    };
+
+    const displayCurrentAgent = async () => {
+        const config = await multiAgentService.getCurrentAgentConfig();
+
+        console.log(chalk.bold.cyan('\n🤖 Current Agent:'));
+        console.log(chalk.gray('─'.repeat(60)));
+        console.log(chalk.white('  Name: ') + chalk.bold.green(config.name));
+        console.log(chalk.white('  ID: ') + chalk.gray(config.id));
+        console.log(chalk.white('  Role: ') + chalk.cyan(config.role));
+        console.log(chalk.white('  Persona: ') + chalk.yellow(config.persona));
+        console.log(chalk.white('  Description: ') + chalk.gray(config.description));
+        console.log(chalk.white('  Provider: ') + chalk.gray(config.provider));
+        console.log(chalk.white('  Model: ') + chalk.gray(config.model));
+        console.log(chalk.gray('─'.repeat(60)) + '\n');
+    };
+
     while (true) {
         const userInputRaw = await askQuestion();
         const userInput = userInputRaw.trim();
@@ -247,6 +311,22 @@ async function main() {
                     await viewCurrentChat();
                     continue;
 
+                case '/agents':
+                    await displayAgents();
+                    continue;
+
+                case '/switch':
+                    if (args.length === 0) {
+                        console.log(chalk.red('\n❌ Please provide an agent ID. Usage: /switch <agent_id>\n'));
+                    } else {
+                        await switchAgent(args[0]);
+                    }
+                    continue;
+
+                case '/current':
+                    await displayCurrentAgent();
+                    continue;
+
                 default:
                     console.log(chalk.red(`\n❌ Unknown command: ${command}`));
                     console.log(chalk.gray('Type /help for available commands.\n'));
@@ -255,7 +335,8 @@ async function main() {
         }
 
         try {
-            const stream = await agent.streamText(userInput, {
+            const currentAgent = multiAgentService.getCurrentAgent();
+            const stream = await currentAgent.streamText(userInput, {
                 userId: userId,
                 conversationId: threadId,
             });
